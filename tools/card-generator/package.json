@@ -1,0 +1,46 @@
+{
+  "name": "ai-card-game",
+  "version": "1.0.0",
+  "description": "A Hearthstone-like card game with AI-generated cards using Phaser",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "webpack-dev-server --mode development",
+    "build": "webpack --mode production",
+    "test": "jest",
+    "api": "node src/api/start.js",
+    "migrate": "node src/tools/migrateCardsToMongoDB.js",
+    "start-all": "node start-all.js"
+  },
+  "keywords": [
+    "phaser",
+    "card-game",
+    "ai",
+    "game"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@huggingface/inference": "^3.5.2",
+    "axios": "^1.8.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "mongoose": "^8.12.1",
+    "openai": "^4.87.3",
+    "phaser": "^3.60.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.22.5",
+    "@babel/preset-env": "^7.22.5",
+    "babel-loader": "^9.1.2",
+    "copy-webpack-plugin": "^11.0.0",
+    "css-loader": "^6.8.1",
+    "file-loader": "^6.2.0",
+    "html-webpack-plugin": "^5.5.3",
+    "jest": "^29.5.0",
+    "style-loader": "^3.3.3",
+    "webpack": "^5.88.0",
+    "webpack-cli": "^5.1.4",
+    "webpack-dev-server": "^4.15.1"
+  }
+}

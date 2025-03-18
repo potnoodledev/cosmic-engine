@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="300" height="400" viewBox="0 0 300 400">
+  <!-- Card background -->
+  <rect width="300" height="400" rx="15" ry="15" fill="#708090" />
+  
+  <!-- Card border -->
+  <rect x="10" y="10" width="280" height="380" rx="10" ry="10" fill="none" stroke="#A9A9A9" stroke-width="5" />
+  
+  <!-- Card cost -->
+  <circle cx="30" cy="30" r="20" fill="#FFFFFF" />
+  <text x="30" y="35" font-family="Arial" font-size="24" text-anchor="middle" fill="#000000">0</text>
+  
+  <!-- Card name -->
+  <text x="150" y="70" font-family="Arial" font-size="20" text-anchor="middle" fill="#FFFFFF" font-weight="bold">Default Card</text>
+  
+  <!-- Card type -->
+  <text x="150" y="95" font-family="Arial" font-size="16" text-anchor="middle" fill="#FFFFFF">Minion</text>
+  
+  <!-- Card image placeholder -->
+  <rect x="40" y="110" width="220" height="160" fill="#FFFFFF" opacity="0.2" />
+  <text x="150" y="190" font-family="Arial" font-size="18" text-anchor="middle" fill="#FFFFFF">Default Image</text>
+  
+  <!-- Card description -->
+  <foreignObject x="40" y="280" width="220" height="80">
+    <div xmlns="http://www.w3.org/1999/xhtml" style="font-family: Arial; font-size: 14px; color: #FFFFFF; text-align: center; overflow-wrap: break-word;">
+      This is a default card with no special abilities.
+    </div>
+  </foreignObject>
+  
+  <!-- Attack and health for minions -->
+  <circle cx="40" cy="360" r="20" fill="#FF4500" />
+  <text x="40" y="365" font-family="Arial" font-size="20" text-anchor="middle" fill="#FFFFFF">1</text>
+  
+  <circle cx="260" cy="360" r="20" fill="#32CD32" />
+  <text x="260" y="365" font-family="Arial" font-size="20" text-anchor="middle" fill="#FFFFFF">1</text>
+</svg> 
