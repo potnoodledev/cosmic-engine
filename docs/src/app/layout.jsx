@@ -5,22 +5,22 @@ import { getPageMap } from 'nextra/page-map'
 import 'nextra-theme-docs/style.css'
 
 export const metadata = {
-  metadataBase: new URL('https://nextra.site'),
+  metadataBase: new URL('https://docs.cosmiclabs.org'),
   title: {
-    template: '%s - Nextra'
+    template: '%s - Cosmic Engine'
   },
-  description: 'Nextra: the Next.js site builder',
-  applicationName: 'Nextra',
+  description: 'Cosmic: The Framework for the Agentic Game Engine',
+  applicationName: 'Cosmic',
   generator: 'Next.js',
   appleWebApp: {
-    title: 'Nextra'
+    title: 'Cosmic'
   },
   other: {
     'msapplication-TileImage': '/ms-icon-144x144.png',
     'msapplication-TileColor': '#fff'
   },
   twitter: {
-    site: 'https://nextra.site'
+    site: 'https://docs.cosmiclabs.org'
   }
 }
 
@@ -29,12 +29,10 @@ export default async function RootLayout({ children }) {
     <Navbar
       logo={
         <div>
-          <b>Nextra</b>{' '}
-          <span style={{ opacity: '60%' }}>The Next Docs Builder</span>
+          <b>Cosmic</b>{' '}
+          <span style={{ opacity: '60%' }}>The Framework for the Agentic Game Engine</span>
         </div>
       }
-      // Next.js discord server
-      chatLink="https://discord.gg/hEM84NMkRv"
     />
   )
   const pageMap = await getPageMap()
@@ -43,11 +41,11 @@ export default async function RootLayout({ children }) {
       <Head faviconGlyph="✦" />
       <body>
         <Layout
-          banner={<Banner storageKey="Nextra 2">Nextra 2 Alpha</Banner>}
+          banner={<Banner storageKey="Cosmic Engine">Cosmic Engine</Banner>}
           navbar={navbar}
-          footer={<Footer>MIT {new Date().getFullYear()} © Nextra.</Footer>}
+          footer={<Footer>MIT {new Date().getFullYear()} © OP Games.</Footer>}
           editLink="Edit this page on GitHub"
-          docsRepositoryBase="https://github.com/shuding/nextra/blob/main/examples/docs"
+          docsRepositoryBase="https://github.com/potnoodledev/cosmic-engine/blob/docs"
           sidebar={{ defaultMenuCollapseLevel: 1 }}
           pageMap={pageMap}
         >
