@@ -1,0 +1,12 @@
+{
+  "name": "cosmic-engine",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "node scripts/select-project.js",
+    "run:phaser-idle": "cd examples/phaser-idle && npm install && npm start",
+    "run:pygame-card-drafting": "cd examples/pygame-card-drafting && python3 -m venv venv && source venv/bin/activate && pip install -r requirements.txt && python main.py"
+  },
+  "dependencies": {
+    "inquirer": "^8.2.6"
+  }
+} 
