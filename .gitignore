@@ -2,3 +2,12 @@
 .next
 node_modules
 .env
+.cache
+
+# Parcel
+dist
+
+# Python
+__pycache__
+models
+build
