@@ -40,7 +40,7 @@
   
   a.cta {
     display: inline-block;
-    background: linear-gradient(to bottom, #238aff, #0077ff);
+    background: linear-gradient(to bottom, #40ff00, #2db300);
     text-decoration: none;
     border-radius: 9999px;
     color: white;
@@ -61,8 +61,9 @@
     transform: translateX(3px);
   }
   a.cta:hover {
-    box-shadow: 0 5px 30px -10px #0078ffab;
-    filter: brightness(1.05);
+    box-shadow: 0 5px 30px -10px #40ff00ab;
+    filter: brightness(1.2);
+    background: linear-gradient(to bottom, #00ff08, #124900);
   }
   a.cta:active {
     box-shadow: 0 1px 3px #00295738;
@@ -79,4 +80,3 @@
   a.cta:focus-visible span {
     transform: translateX(3px);
   }
-  

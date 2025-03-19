@@ -13,7 +13,7 @@ export default function IndexPage() {
         Build better games through agentic co-creation,{' '}
         <br className="max-md:hidden" />
         presented by{' '}
-        <Link href="https://engine.cosmiclabs.org" className="text-current">
+        <Link href="https://engine.cosmiclabs.org" className="text-current" style={{ color: '#40ff00' }}>
           Cosmic Labs
         </Link>
         .

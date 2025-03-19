@@ -1,0 +1,5 @@
+
+/* Keep the hover state consistent */
+a:hover {
+  color: #40ff00 !important;
+} 
