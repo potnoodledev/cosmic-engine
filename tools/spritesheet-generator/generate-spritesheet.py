@@ -35,7 +35,7 @@ def generate_spritesheet(prompt):
         ]        
 
         response = client.models.generate_content(
-            model="models/gemini-2.0-flash-exp",
+            model="models/gemini-2.0-flash-exp-image-generation",
             contents=contents,
             config=types.GenerateContentConfig(response_modalities=['Text', 'Image'])
         )

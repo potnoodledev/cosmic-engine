@@ -18,11 +18,12 @@ We call these new class of games **Living Games**, games that evolve through age
 
 * [Excalidraw Plugin](https://marketplace.visualstudio.com/items?itemName=pomdtr.excalidraw-editor)
 
-#### API Keys (Needed for examples)
+#### API Keys (Needed for examples; copy .env to specific tool folders)
 
 * [Hugging Face](https://huggingface.co/)
 * [OpenAI](https://platform.openai.com/api-keys)
-
+* [Gemini](https://aistudio.google.com/apikey)
+* [X](https://developer.x.com/)
 
 ## Getting Started
 
