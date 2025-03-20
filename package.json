@@ -5,7 +5,8 @@
     "start": "node scripts/select-project.js",
     "run:phaser-idle": "cd examples/phaser-idle && npm install && npm start",
     "run:pygame-card-drafting": "cd examples/pygame-card-drafting && python3 -m venv venv && source venv/bin/activate && pip install -r requirements.txt && python main.py",
-    "docs": "cd docs && npm install && npm run dev"
+    "docs": "cd docs && npm install && npm run dev",
+    "generate-spritesheet": "cd tools/spritesheet-generator && python3 generate-spritesheet.py"
   },
   "dependencies": {
     "inquirer": "^8.2.6"
