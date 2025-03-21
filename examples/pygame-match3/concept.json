@@ -1,0 +1,111 @@
+{
+  "gameTitle": "Gem Fusion Quest",
+  "genre": "Match 3 Puzzle",
+  "description": "A magical match-3 puzzle game where players combine mystical gems to create powerful combinations and progress through an enchanted world.",
+  
+  "coreMechanics": {
+    "matching": {
+      "description": "Match 3 or more identical gems in horizontal or vertical lines",
+      "specialMatches": {
+        "4gems": "Creates a line-clearing power gem",
+        "5gems": "Creates an explosive gem that clears surrounding area",
+        "Lshape": "Creates a color-bomb that clears all gems of one color"
+      }
+    },
+    "powerUps": [
+      {
+        "name": "Color Bomb",
+        "effect": "Removes all gems of a selected color"
+      },
+      {
+        "name": "Lightning Gem",
+        "effect": "Clears an entire row or column"
+      },
+      {
+        "name": "Nova Gem",
+        "effect": "Explodes in a 3x3 area"
+      }
+    ]
+  },
+
+  "progression": {
+    "levels": {
+      "structure": "100 unique levels across 5 magical realms",
+      "objectives": [
+        "Score targets",
+        "Gem collection goals",
+        "Time-based challenges",
+        "Special gem creation tasks"
+      ]
+    },
+    "difficulty": {
+      "curve": "Gradual increase with periodic relief levels",
+      "elements": [
+        "Limited moves",
+        "Time constraints",
+        "Obstacle tiles",
+        "Required gem combinations"
+      ]
+    }
+  },
+
+  "features": {
+    "gameElements": {
+      "gems": [
+        "Ruby (red)",
+        "Sapphire (blue)",
+        "Emerald (green)",
+        "Topaz (yellow)",
+        "Amethyst (purple)",
+        "Diamond (rainbow)"
+      ],
+      "obstacles": [
+        "Ice blocks",
+        "Stone blocks",
+        "Magic locks",
+        "Portal tiles"
+      ]
+    },
+    "powerUps": {
+      "match4": "Creates line blast gem",
+      "match5": "Creates super gem",
+      "specialCombinations": "Combining power gems creates epic effects"
+    }
+  },
+
+  "monetization": {
+    "primary": "Free to play with in-app purchases",
+    "elements": [
+      "Extra moves",
+      "Power-up bundles",
+      "Lives system",
+      "Special gems"
+    ]
+  },
+
+  "visualStyle": {
+    "theme": "Magical fantasy realm",
+    "artStyle": "Bright, colorful, with magical particle effects",
+    "animations": {
+      "matches": "Sparkling dissolution",
+      "powerUps": "Magical explosions and transformations",
+      "levelComplete": "Celebration with magical fireworks"
+    }
+  },
+
+  "audio": {
+    "music": "Enchanting fantasy soundtrack",
+    "soundEffects": {
+      "matching": "Crystal chimes",
+      "powerUps": "Magical explosions",
+      "levelComplete": "Triumphant fanfare"
+    }
+  },
+
+  "uniqueSellingPoints": [
+    "Dynamic power-up combinations",
+    "Magical themed progression system",
+    "Interactive environment elements",
+    "Strategic depth through special gem creation"
+  ]
+} 
