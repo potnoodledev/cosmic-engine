@@ -11,7 +11,7 @@
   "dependencies": {
     "clsx": "^2.1.0",
     "framer-motion": "^12.0.0",
-    "next": "^15.0.2",
+    "next": "^15.2.3",
     "nextra": "^4.2.16",
     "nextra-theme-docs": "^4.2.16",
     "react": "18.3.1",
