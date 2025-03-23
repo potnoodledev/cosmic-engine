@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const { Octokit } = require('octokit');
 const path = require('path');
+const axios = require('axios');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -42,18 +43,98 @@ app.get('/api/repos', async (req, res) => {
   }
 });
 
-// Get repository branches
+// Get repository branches with Vercel deployment URLs
 app.get('/api/repos/:owner/:repo/branches', async (req, res) => {
   try {
     const { owner, repo } = req.params;
     console.log(`Fetching branches for ${owner}/${repo}...`);
-    const { data } = await octokit.rest.repos.listBranches({
+    
+    // Fetch branches from GitHub
+    const { data: branches } = await octokit.rest.repos.listBranches({
       owner,
       repo,
       per_page: 100
     });
-    console.log(`Found ${data.length} branches`);
-    res.json(data);
+
+    console.log('branches:', branches);
+
+    // Fetch Vercel deployments if Vercel token is available
+    if (process.env.VERCEL_TOKEN) {
+      try {
+        // Log Vercel configuration (without exposing sensitive data)
+        console.log('Vercel configuration:', {
+          hasToken: !!process.env.VERCEL_TOKEN,
+          projectId: process.env.VERCEL_PROJECT_ID,
+          teamId: process.env.VERCEL_TEAM_ID,
+          tokenLength: process.env.VERCEL_TOKEN.length
+        });
+
+        // Build query parameters
+        const queryParams = new URLSearchParams({
+          projectId: process.env.VERCEL_PROJECT_ID,
+          limit: 100
+        });
+
+        // Add teamId if available
+        if (process.env.VERCEL_TEAM_ID) {
+          queryParams.append('teamId', process.env.VERCEL_TEAM_ID);
+        }
+
+        const vercelUrl = `https://api.vercel.com/v6/deployments?${queryParams.toString()}`;
+        console.log('Fetching Vercel deployments from:', vercelUrl);
+
+        const { data: vercelData } = await axios.get(vercelUrl, {
+          headers: {
+            'Authorization': `Bearer ${process.env.VERCEL_TOKEN}`,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          }
+        });
+        
+        console.log('Vercel deployments:', vercelData);
+
+        // also show meta for each deployment
+        vercelData.deployments.forEach(deployment => {
+          console.log('Deployment Sha:', deployment.meta.githubCommitSha);
+        });
+
+        // Map deployment URLs to branches
+        const branchesWithDeployments = branches.map(branch => {
+          const deployment = vercelData.deployments.find(d => d.meta?.githubCommitSha === branch.commit.sha);
+          return {
+            ...branch,
+            deploymentUrl: deployment?.url
+          };
+        });
+
+        console.log(`Found ${branchesWithDeployments.length} branches with deployments`);
+        res.json(branchesWithDeployments);
+        return;
+      } catch (vercelError) {
+        // Enhanced error logging
+        console.error('Error fetching Vercel deployments:', {
+          message: vercelError.message,
+          status: vercelError.response?.status,
+          statusText: vercelError.response?.statusText,
+          data: vercelError.response?.data,
+          headers: vercelError.response?.headers,
+          config: {
+            url: vercelError.config?.url,
+            method: vercelError.config?.method,
+            headers: vercelError.config?.headers
+          }
+        });
+
+        // Continue with just GitHub branches if Vercel API fails
+        console.log('Falling back to GitHub-only branch data');
+      }
+    } else {
+      console.log('No Vercel token found, skipping Vercel deployment lookup');
+    }
+
+    console.log(`Found ${branches.length} branches`);
+    res.json(branches);
+
   } catch (error) {
     console.error('Error fetching branches:', error);
     res.status(500).json({ error: 'Failed to fetch branches', details: error.message });
