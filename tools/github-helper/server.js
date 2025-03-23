@@ -3,9 +3,21 @@ const express = require('express');
 const { Octokit } = require('octokit');
 const path = require('path');
 const axios = require('axios');
+const cors = require('cors');
 
 const app = express();
 const port = process.env.PORT || 3000;
+
+// CORS configuration
+const corsOptions = {
+  origin: '*', // Allow all origins in development. In production, specify your allowed origins
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+};
+
+// Apply CORS middleware
+app.use(cors(corsOptions));
 
 // Debug logging middleware
 app.use((req, res, next) => {
