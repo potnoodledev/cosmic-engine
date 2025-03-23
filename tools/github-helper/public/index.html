@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitHub Repository Branches</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold text-gray-900 mb-8">GitHub Repository Branches</h1>
+        
+        <!-- Repository Selection -->
+        <div class="mb-8">
+            <label for="repo-select" class="block text-sm font-medium text-gray-700 mb-2">Select Repository</label>
+            <select id="repo-select" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                <option value="">Loading repositories...</option>
+            </select>
+        </div>
+
+        <!-- Create Branch Form -->
+        <div id="create-branch-form" class="hidden mb-8">
+            <h2 class="text-xl font-semibold text-gray-900 mb-4">Create New Branch</h2>
+            <div class="bg-white shadow rounded-lg p-6">
+                <div class="space-y-4">
+                    <div>
+                        <label for="branch-name" class="block text-sm font-medium text-gray-700">Branch Name</label>
+                        <input type="text" id="branch-name" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="feature/new-branch">
+                    </div>
+                    <div>
+                        <label for="file-content" class="block text-sm font-medium text-gray-700">index.html Content</label>
+                        <textarea id="file-content" rows="10" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm" placeholder="<html>...</html>"></textarea>
+                    </div>
+                    <div class="flex justify-end">
+                        <button id="push-button" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                            Create Branch & Push
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Branches List -->
+        <div id="branches-container" class="hidden">
+            <h2 class="text-xl font-semibold text-gray-900 mb-4">Existing Branches</h2>
+            <div class="bg-white shadow rounded-lg overflow-hidden">
+                <ul id="branches-list" class="divide-y divide-gray-200">
+                    <!-- Branches will be inserted here -->
+                </ul>
+            </div>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loading" class="hidden">
+            <div class="flex items-center justify-center py-8">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+            </div>
+        </div>
+
+        <!-- Error State -->
+        <div id="error" class="hidden">
+            <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative" role="alert">
+                <span id="error-message" class="block sm:inline"></span>
+            </div>
+        </div>
+
+        <!-- Success State -->
+        <div id="success" class="hidden">
+            <div class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded relative" role="alert">
+                <span id="success-message" class="block sm:inline"></span>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        const repoSelect = document.getElementById('repo-select');
+        const createBranchForm = document.getElementById('create-branch-form');
+        const branchesContainer = document.getElementById('branches-container');
+        const branchesList = document.getElementById('branches-list');
+        const loading = document.getElementById('loading');
+        const error = document.getElementById('error');
+        const errorMessage = document.getElementById('error-message');
+        const success = document.getElementById('success');
+        const successMessage = document.getElementById('success-message');
+        const branchNameInput = document.getElementById('branch-name');
+        const fileContentInput = document.getElementById('file-content');
+        const pushButton = document.getElementById('push-button');
+
+        let currentOwner = '';
+        let currentRepo = '';
+
+        // Fetch repositories
+        async function fetchRepositories() {
+            try {
+                const response = await fetch('/api/repos');
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.details || errorData.error || 'Failed to fetch repositories');
+                }
+                const repos = await response.json();
+                
+                repoSelect.innerHTML = '<option value="">Select a repository</option>';
+                repos.forEach(repo => {
+                    const option = document.createElement('option');
+                    option.value = `${repo.owner.login}/${repo.name}`;
+                    option.textContent = repo.name;
+                    repoSelect.appendChild(option);
+                });
+            } catch (err) {
+                showError(`Failed to load repositories: ${err.message}`);
+            }
+        }
+
+        // Fetch branches for selected repository
+        async function fetchBranches(owner, repo) {
+            try {
+                showLoading();
+                const response = await fetch(`/api/repos/${owner}/${repo}/branches`);
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.details || errorData.error || 'Failed to fetch branches');
+                }
+                const branches = await response.json();
+                
+                branchesList.innerHTML = '';
+                branches.forEach(branch => {
+                    const li = document.createElement('li');
+                    li.className = 'px-6 py-4 hover:bg-gray-50';
+                    li.innerHTML = `
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center">
+                                <svg class="h-5 w-5 text-gray-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"></path>
+                                </svg>
+                                <span class="text-sm font-medium text-gray-900">${branch.name}</span>
+                            </div>
+                            <span class="text-sm text-gray-500">${branch.commit.sha.substring(0, 7)}</span>
+                        </div>
+                    `;
+                    branchesList.appendChild(li);
+                });
+                
+                branchesContainer.classList.remove('hidden');
+                hideLoading();
+            } catch (err) {
+                showError(`Failed to load branches: ${err.message}`);
+            }
+        }
+
+        // Create branch and push file
+        async function createBranchAndPush() {
+            try {
+                showLoading();
+                const branchName = branchNameInput.value.trim();
+                const content = fileContentInput.value.trim();
+
+                if (!branchName || !content) {
+                    throw new Error('Please fill in all fields');
+                }
+
+                const response = await fetch(`/api/repos/${currentOwner}/${currentRepo}/push`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ branchName, content }),
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.details || errorData.error || 'Failed to create branch and push file');
+                }
+                
+                const result = await response.json();
+                showSuccess(`Successfully created branch "${branchName}" and pushed index.html`);
+                
+                // Refresh branches list
+                fetchBranches(currentOwner, currentRepo);
+                
+                // Clear form
+                branchNameInput.value = '';
+                fileContentInput.value = '';
+            } catch (err) {
+                showError(err.message || 'Failed to create branch and push file');
+            }
+        }
+
+        // Event Listeners
+        repoSelect.addEventListener('change', (e) => {
+            if (e.target.value) {
+                const [owner, repo] = e.target.value.split('/');
+                currentOwner = owner;
+                currentRepo = repo;
+                createBranchForm.classList.remove('hidden');
+                fetchBranches(owner, repo);
+            } else {
+                createBranchForm.classList.add('hidden');
+                branchesContainer.classList.add('hidden');
+            }
+        });
+
+        pushButton.addEventListener('click', createBranchAndPush);
+
+        // Utility Functions
+        function showLoading() {
+            loading.classList.remove('hidden');
+            error.classList.add('hidden');
+            success.classList.add('hidden');
+        }
+
+        function hideLoading() {
+            loading.classList.add('hidden');
+        }
+
+        function showError(message) {
+            errorMessage.textContent = message;
+            error.classList.remove('hidden');
+            loading.classList.add('hidden');
+            success.classList.add('hidden');
+        }
+
+        function showSuccess(message) {
+            successMessage.textContent = message;
+            success.classList.remove('hidden');
+            loading.classList.add('hidden');
+            error.classList.add('hidden');
+        }
+
+        // Initial load
+        fetchRepositories();
+    </script>
+</body>
+</html> 
