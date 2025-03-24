@@ -20,14 +20,35 @@ const pool = new Pool({
 const initDb = async () => {
   const client = await pool.connect();
   try {
+    // Create threads table
     await client.query(`
       CREATE TABLE IF NOT EXISTS twitter_threads (
         thread_id TEXT PRIMARY KEY,
-        tweets JSONB NOT NULL,
-        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );
     `);
+
+    // Create tweets table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS tweets (
+        tweet_id TEXT PRIMARY KEY,
+        thread_id TEXT REFERENCES twitter_threads(thread_id),
+        text TEXT NOT NULL,
+        author_id TEXT NOT NULL,
+        created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+        image_url TEXT,
+        tip_status TEXT DEFAULT 'pending',
+        tip_amount DECIMAL(10,2),
+        tip_timestamp TIMESTAMP WITH TIME ZONE,
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    // Create index for faster thread lookups
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_tweets_thread_id ON tweets(thread_id);
+    `);
+
     console.log('Database initialized successfully');
   } catch (error) {
     console.error('Error initializing database:', error);
