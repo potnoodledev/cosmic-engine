@@ -1,10 +1,17 @@
 import express from 'express';
 import cors from 'cors';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { pool, initDb } from './db.js';
 import { getThreadTweets } from './twitterService.js';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const app = express();
 const port = process.env.PORT || 3000;
+
+const URL = process.env.URL || 'http://localhost:3003';
 
 app.use(cors());
 app.use(express.json());
@@ -12,8 +19,13 @@ app.use(express.json());
 // Initialize database
 initDb();
 
+// Serve static files in production
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static(path.join(__dirname, 'dist')));
+}
+
 // Get thread tweets
-app.get('/thread/:threadId', async (req, res) => {
+app.get('/api/thread/:threadId', async (req, res) => {
   const { threadId } = req.params;
   const { refresh } = req.query;
 
@@ -196,6 +208,13 @@ app.post('/tweet/:tweetId/tip', async (req, res) => {
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
 });
+
+// Serve index.html for all other routes in production
+if (process.env.NODE_ENV === 'production') {
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+  });
+}
 
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
