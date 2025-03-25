@@ -39,10 +39,14 @@ const twitterClient = new TwitterApi({
 });
 
 
-// Get thread tweets
-app.get('/api/thread/:threadId', async (req, res) => {
-  const { threadId } = req.params;
+// Get thread tweets with optional threadId
+app.get('/api/thread/:threadId?', async (req, res) => {
+  const threadId = req.params.threadId || process.env.THREAD_ID;
   const { refresh } = req.query;
+
+  if (!threadId) {
+    return res.status(400).json({ error: 'No thread ID provided and no default thread ID configured' });
+  }
 
   try {
     // If refresh is requested, fetch new tweets
@@ -230,13 +234,15 @@ app.post('/tweet/:tweetId/analyze', async (req, res) => {
           role: "user",
           content: [
             { type: "input_text", 
-                text: `As a game design expert, analyze if the following text could be a game concept.\n\n${textWithoutUrls}\n\nAfterwards, analyze if the image contains noodles. Describe the image in 3 words or less. Respond with the following JSON, do not include any other text:
+                text: `As a game design expert, analyze if the following text could be a game concept.\n\n${textWithoutUrls}\n\nAfterwards, analyze if the image contains noodles. Respond with the following JSON, do not include any other text:
 
-                ${tweetId}:
+                r:
                 {
-                  "isGameMechanic": "No" if not a concept or summarized game concept in 10 words or less if it is,
+                  "isGameMechanic": "false" if not a concept or "true" if it is,
+                  "conceptDetails": why mechanic doesn't qualify as a concept or summarized game concept. Should be 10 words or less,
                   "imageDescription": 3 words or less describing the image,
-                  "isNoodle": "Yes" if it contains noodles or "No" if it doesn't
+                  "isNoodle": "true" if it contains noodles or "false" if it doesn't
+                  "tagged": "true" if the text contains $NOODS
                 }
                 `
             },

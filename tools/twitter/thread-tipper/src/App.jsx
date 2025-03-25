@@ -1,28 +1,31 @@
 import React, { useState, useEffect } from 'react';
 import TweetList from './components/TweetList';
-import TweetSearch from './components/TweetSearch';
 
 function App() {
   const [tweets, setTweets] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const fetchTweets = async (threadId) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/thread/${threadId}?refresh=true`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch tweets');
+  useEffect(() => {
+    const fetchTweets = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/thread?refresh=true`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch tweets');
+        }
+        const data = await response.json();
+        setTweets(data.tweets);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
       }
-      const data = await response.json();
-      setTweets(data.tweets);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
+
+    fetchTweets();
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-100 py-6 flex flex-col justify-center sm:py-12">
@@ -32,7 +35,6 @@ function App() {
             <div className="divide-y divide-gray-200">
               <div className="py-8 text-base leading-6 space-y-4 text-gray-700 sm:text-lg sm:leading-7">
                 <h1 className="text-3xl font-bold text-center mb-8">Twitter Thread Viewer</h1>
-                <TweetSearch onSearch={fetchTweets} />
                 {loading && <div className="text-center">Loading...</div>}
                 {error && <div className="text-red-500 text-center">{error}</div>}
                 <TweetList tweets={tweets} />

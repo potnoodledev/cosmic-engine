@@ -1,12 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 function TweetList({ tweets }) {
+  const [loadingTweetId, setLoadingTweetId] = useState(null);
+
   if (!tweets.length) {
     return null;
   }
   
   const handleTip = async (tweet) => {
     const apiUrl = import.meta.env.VITE_API_URL;
+    setLoadingTweetId(tweet.id);
 
     try {
       // Call the new combined analyze endpoint
@@ -44,6 +47,8 @@ function TweetList({ tweets }) {
     } catch (error) {
       console.error('Error processing tip:', error);
       alert('Error analyzing tweet. Please try again.');
+    } finally {
+      setLoadingTweetId(null);
     }
   };
 
@@ -113,14 +118,17 @@ function TweetList({ tweets }) {
               <div className="mt-4 flex justify-end">
                 <button
                   onClick={() => handleTip(tweet)}
-                  disabled={tweet.tip_status === 'completed'}
+                  disabled={tweet.tip_status === 'completed' || !tweet.image_url || loadingTweetId === tweet.id}
                   className={`px-4 py-2 rounded-lg font-medium transition-colors duration-200 ${
-                    tweet.tip_status === 'completed'
+                    tweet.tip_status === 'completed' || !tweet.image_url || loadingTweetId === tweet.id
                       ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
                       : 'bg-blue-600 text-white hover:bg-blue-700'
                   }`}
                 >
-                  {tweet.tip_status === 'completed' ? 'Tipped' : tweet.tip_status === 'pending' ? 'Processing' : 'Review'}
+                  {loadingTweetId === tweet.id ? 'Analyzing...' :
+                   tweet.tip_status === 'completed' ? 'Tipped' :
+                   tweet.tip_status === 'pending' ? 'Processing' :
+                   !tweet.image_url ? 'No Image' : 'Analyze'}
                 </button>
               </div>
             </div>
