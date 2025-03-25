@@ -12,6 +12,8 @@ function TweetList({ tweets }) {
       apiKey: import.meta.env.VITE_OPENAI_API_KEY,
       dangerouslyAllowBrowser: true //TODO! VERY IMPORTANT! This is a temporary fix for the browser environment. CHANGE THIS TO SERVER SIDE
     });
+    let imageResult = false;
+    let textResult = false;
     // const OPENAI_API_KEY = import.meta.env.VITE_OPENAI_API_KEY;
     try {
       // First API call - Text Analysis
@@ -20,10 +22,10 @@ function TweetList({ tweets }) {
           input: `As a game design expert, analyze if the following text could be a game mechanic. Respond with 'Yes' or 'No':\n\n${tweet.text}`
       });
       
-      const textResult = textResponse.output_text === 'Yes';
+      textResult = textResponse.output_text === 'Yes';
       console.log('Text Analysis:', textResult);
 
-    //   // Second API call - Image Analysis (if image exists)
+      // Second API call - Image Analysis (if image exists)
       if (tweet.image_url) {
         const imageResponse = await openai.responses.create({
           model: "gpt-4o",
@@ -40,10 +42,16 @@ function TweetList({ tweets }) {
               },
           ],
         });
+        
 
-        const imageResult = imageResponse.output_text === 'Yes';
+        imageResult = imageResponse.output_text === 'Yes';
 
         console.log('Image Analysis:', imageResult);
+      }
+      if (textResult && imageResult) {
+        // Proceed with tipping
+      } else {
+        // Set as invalid
       }
     } catch (error) {
       console.error('Error processing tip:', error);
