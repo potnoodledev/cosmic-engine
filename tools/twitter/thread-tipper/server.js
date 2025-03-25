@@ -196,50 +196,68 @@ app.get('/api/thread/:threadId', async (req, res) => {
   }
 });
 
-// Checks whether text is a game mechanic
-app.post('/tweet/is-game-mechanic', async (req, res) => {
+// Checks whether text is a game mechanic and image contains noodles
+app.post('/tweet/:tweetId/analyze', async (req, res) => {
   try {
-    const { tweetText } = req.body;
-    const textResponse = await openai.responses.create({
+    const { tweetId } = req.params;
+    
+    // Get tweet data from database
+    const dbResult = await pool.query(
+      'SELECT text, image_url FROM tweets WHERE tweet_id = $1',
+      [tweetId]
+    );
+
+    if (dbResult.rows.length === 0) {
+      return res.status(404).json({ error: "Tweet not found in database" });
+    }
+
+    const { text, image_url } = dbResult.rows[0];
+    
+    // remove any urls from the text
+    const textWithoutUrls = text.replace(/https?:\/\/[^\s]+/g, '');
+    
+    // Check if text is a game mechanic
+    const mechanicResponse = await openai.responses.create({
       model: "gpt-4o-mini",
-      input: `As a game design expert, analyze if the following text could be a game mechanic. Respond with 'Yes' or 'No':\n\n${tweetText}`
+      input: `As a game design expert, analyze if the following text could be a game mechanic. Respond with 'Yes' or 'No':\n\n${textWithoutUrls}`
     });
 
-    const result = textResponse.output_text === 'Yes';
-    
-    res.json(result);
-  } catch (error) {
-    res.status(500).json({ error: "Analysis failed" });
-  }
-})
-
-// Checks whether image is a noodle
-app.post('/tweet/is-noodle', async (req, res) => {
-  try {
-    const { imageUrl } = req.body;
-    const imageResponse = await openai.responses.create({
+    // Check if image contains noodles
+    const analysisResponse = await openai.responses.create({
       model: "gpt-4o-mini",
       input: [
-          {
-              role: "user",
-              content: [
-                  { type: "input_text", text: "Does this image contain noodles? Respond with 'Yes' or 'No'" },
-                  {
-                      type: "input_image",
-                      image_url: imageUrl
-                  },
-              ],
-          },
+        {
+          role: "user",
+          content: [
+            { type: "input_text", 
+                text: `As a game design expert, analyze if the following text could be a game concept.\n\n${textWithoutUrls}\n\nAfterwards, analyze if the image contains noodles. Describe the image in 3 words or less. Respond with the following JSON, do not include any other text:
+
+                ${tweetId}:
+                {
+                  "isGameMechanic": "No" if not a concept or summarized game concept in 10 words or less if it is,
+                  "imageDescription": 3 words or less describing the image,
+                  "isNoodle": "Yes" if it contains noodles or "No" if it doesn't
+                }
+                `
+            },
+            {
+              type: "input_image",
+              image_url: image_url
+            },
+          ],
+        },
       ],
     });
+
+    const result = analysisResponse.output_text
     
-    const result = imageResponse.output_text === 'Yes';
-    
-    res.json(result );
+    res.json(result)
+
   } catch (error) {
-    res.status(500).json({ error: "Image analysis failed"})
+    console.error('Error in analysis:', error);
+    res.status(500).json({ error: "Analysis failed" });
   }
-})
+});
 
 app.post('/tweet/:tweetId/tweet-bankrbot', async (req, res) => {
   // TODO: Please continue here to tag. Just need updated API key that allows writing

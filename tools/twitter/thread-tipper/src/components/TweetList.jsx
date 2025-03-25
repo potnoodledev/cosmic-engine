@@ -6,57 +6,44 @@ function TweetList({ tweets }) {
   }
   
   const handleTip = async (tweet) => {
-    const apiUrl = import.meta.env.VITE_API_URL
-    let imageResult = false;
-    let textResult = false;
+    const apiUrl = import.meta.env.VITE_API_URL;
 
     try {
-      const textRequestOptions = {
+      // Call the new combined analyze endpoint
+      const analyzeResponse = await fetch(`${apiUrl}/tweet/${tweet.id}/analyze`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          tweetText: tweet.text
-        })
-      };
-      const textResponse = await fetch(`${apiUrl}/tweet/is-game-mechanic`, textRequestOptions);
-      // Second API call - Image Analysis (if image exists)
-      if (tweet.image_url) {
-        const imageRequestOptions = {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            imageUrl: tweet.image_url
-          })
-        };
-        
-        const imageResponse = await fetch(`${apiUrl}/tweet/is-noodle`, imageRequestOptions);
-        
-        const isGameMechanic = await textResponse.json()
-        const isNoodle = await imageResponse.json()
+        }
+      });
 
-      if (isGameMechanic && isNoodle) {
-      // Proceed with tipping
-        console.log("trying to tweet")
+      if (!analyzeResponse.ok) {
+        throw new Error('Analysis failed');
+      }
+
+      const result = await analyzeResponse.json();
+      
+      // Show alert with the analysis results
+      alert(result);
+
+      if (result.isGameMechanic && result.isNoodle) {
+        // Proceed with tipping
+        console.log("trying to tweet");
         try {
-        const bankrBotRequestOptions = {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        };
-          const tweetBankrbot = await fetch(`${apiUrl}/tweet/sample-id/tweet-bankrbot`, bankrBotRequestOptions)
-          console.log("success", tweetBankrbot)
+          const bankrBotResponse = await fetch(`${apiUrl}/tweet/${tweet.id}/tweet-bankrbot`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          });
+          console.log("success", bankrBotResponse);
         } catch (error) {
           console.error('Error posting tweet:', error);
-       }
         }
       }
     } catch (error) {
       console.error('Error processing tip:', error);
+      alert('Error analyzing tweet. Please try again.');
     }
   };
 
@@ -64,7 +51,7 @@ function TweetList({ tweets }) {
     <div className="space-y-6 mt-8">
       {tweets.map((tweet, index) => (
         <div 
-          key={tweet.tweet_id} 
+          key={tweet.id} 
           className="bg-white p-6 rounded-xl shadow-md border border-gray-100 hover:shadow-lg transition-shadow duration-200"
         >
           <div className="flex items-start space-x-4">
