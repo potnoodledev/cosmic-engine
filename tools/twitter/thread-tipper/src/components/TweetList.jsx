@@ -1,6 +1,4 @@
 import React from 'react';
-import OpenAI from "openai";
-
 
 function TweetList({ tweets }) {
   if (!tweets.length) {
@@ -8,50 +6,54 @@ function TweetList({ tweets }) {
   }
   
   const handleTip = async (tweet) => {
-    const openai = new OpenAI({
-      apiKey: import.meta.env.VITE_OPENAI_API_KEY,
-      dangerouslyAllowBrowser: true //TODO! VERY IMPORTANT! This is a temporary fix for the browser environment. CHANGE THIS TO SERVER SIDE
-    });
+    const apiUrl = import.meta.env.VITE_API_URL
     let imageResult = false;
     let textResult = false;
-    // const OPENAI_API_KEY = import.meta.env.VITE_OPENAI_API_KEY;
-    try {
-      // First API call - Text Analysis
-      const textResponse = await openai.responses.create({
-          model: "gpt-4o-mini",
-          input: `As a game design expert, analyze if the following text could be a game mechanic. Respond with 'Yes' or 'No':\n\n${tweet.text}`
-      });
-      
-      textResult = textResponse.output_text === 'Yes';
-      console.log('Text Analysis:', textResult);
 
+    try {
+      const textRequestOptions = {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          tweetText: tweet.text
+        })
+      };
+      const textResponse = await fetch(`${apiUrl}/tweet/is-game-mechanic`, textRequestOptions);
       // Second API call - Image Analysis (if image exists)
       if (tweet.image_url) {
-        const imageResponse = await openai.responses.create({
-          model: "gpt-4o",
-          input: [
-              {
-                  role: "user",
-                  content: [
-                      { type: "input_text", text: "Does this image contain noodles? Respond with 'Yes' or 'No'" },
-                      {
-                          type: "input_image",
-                          image_url: tweet.image_url
-                      },
-                  ],
-              },
-          ],
-        });
+        const imageRequestOptions = {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            imageUrl: tweet.image_url
+          })
+        };
         
+        const imageResponse = await fetch(`${apiUrl}/tweet/is-noodle`, imageRequestOptions);
+        
+        const isGameMechanic = await textResponse.json()
+        const isNoodle = await imageResponse.json()
 
-        imageResult = imageResponse.output_text === 'Yes';
-
-        console.log('Image Analysis:', imageResult);
-      }
-      if (textResult && imageResult) {
-        // Proceed with tipping
-      } else {
-        // Set as invalid
+      if (isGameMechanic && isNoodle) {
+      // Proceed with tipping
+        console.log("trying to tweet")
+        try {
+        const bankrBotRequestOptions = {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        };
+          const tweetBankrbot = await fetch(`${apiUrl}/tweet/sample-id/tweet-bankrbot`, bankrBotRequestOptions)
+          console.log("success", tweetBankrbot)
+        } catch (error) {
+          console.error('Error posting tweet:', error);
+       }
+        }
       }
     } catch (error) {
       console.error('Error processing tip:', error);
