@@ -1,9 +1,54 @@
 import React from 'react';
+import OpenAI from "openai";
+
 
 function TweetList({ tweets }) {
   if (!tweets.length) {
     return null;
   }
+  
+  const handleTip = async (tweet) => {
+    const openai = new OpenAI({
+      apiKey: import.meta.env.VITE_OPENAI_API_KEY,
+      dangerouslyAllowBrowser: true //TODO! VERY IMPORTANT! This is a temporary fix for the browser environment. CHANGE THIS TO SERVER SIDE
+    });
+    // const OPENAI_API_KEY = import.meta.env.VITE_OPENAI_API_KEY;
+    try {
+      // First API call - Text Analysis
+      const textResponse = await openai.responses.create({
+          model: "gpt-4o-mini",
+          input: `As a game design expert, analyze if the following text could be a game mechanic. Respond with 'Yes' or 'No':\n\n${tweet.text}`
+      });
+      
+      const textResult = textResponse.output_text === 'Yes';
+      console.log('Text Analysis:', textResult);
+
+    //   // Second API call - Image Analysis (if image exists)
+      if (tweet.image_url) {
+        const imageResponse = await openai.responses.create({
+          model: "gpt-4o",
+          input: [
+              {
+                  role: "user",
+                  content: [
+                      { type: "input_text", text: "Does this image contain noodles? Respond with 'Yes' or 'No'" },
+                      {
+                          type: "input_image",
+                          image_url: tweet.image_url
+                      },
+                  ],
+              },
+          ],
+        });
+
+        const imageResult = imageResponse.output_text === 'Yes';
+
+        console.log('Image Analysis:', imageResult);
+      }
+    } catch (error) {
+      console.error('Error processing tip:', error);
+    }
+  };
 
   return (
     <div className="space-y-6 mt-8">
@@ -67,6 +112,19 @@ function TweetList({ tweets }) {
                     </span>
                   </div>
                 )}
+              </div>
+              <div className="mt-4 flex justify-end">
+                <button
+                  onClick={() => handleTip(tweet)}
+                  disabled={tweet.tip_status === 'completed'}
+                  className={`px-4 py-2 rounded-lg font-medium transition-colors duration-200 ${
+                    tweet.tip_status === 'completed'
+                      ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                      : 'bg-blue-600 text-white hover:bg-blue-700'
+                  }`}
+                >
+                  {tweet.tip_status === 'completed' ? 'Tipped' : tweet.tip_status === 'pending' ? 'Processing' : 'Review'}
+                </button>
               </div>
             </div>
           </div>
