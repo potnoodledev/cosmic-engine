@@ -4,6 +4,9 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { pool, initDb } from './db.js';
 import { getThreadTweets } from './twitterService.js';
+import OpenAI from "openai";
+import { TwitterApi } from 'twitter-api-v2';
+
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -12,6 +15,10 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 const URL = process.env.URL || 'http://localhost:3003';
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY
+});
 
 app.use(cors());
 app.use(express.json());
@@ -23,6 +30,14 @@ initDb();
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, 'dist')));
 }
+
+const twitterClient = new TwitterApi({
+  appKey: process.env.TWITTER_API_KEY,
+  appSecret: process.env.TWITTER_API_SECRET,
+  accessToken: process.env.TWITTER_ACCESS_TOKEN,
+  accessSecret: process.env.TWITTER_ACCESS_SECRET,
+});
+
 
 // Get thread tweets
 app.get('/api/thread/:threadId', async (req, res) => {
@@ -180,6 +195,63 @@ app.get('/api/thread/:threadId', async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch thread tweets' });
   }
 });
+
+// Checks whether text is a game mechanic
+app.post('/tweet/is-game-mechanic', async (req, res) => {
+  try {
+    const { tweetText } = req.body;
+    const textResponse = await openai.responses.create({
+      model: "gpt-4o-mini",
+      input: `As a game design expert, analyze if the following text could be a game mechanic. Respond with 'Yes' or 'No':\n\n${tweetText}`
+    });
+
+    const result = textResponse.output_text === 'Yes';
+    
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: "Analysis failed" });
+  }
+})
+
+// Checks whether image is a noodle
+app.post('/tweet/is-noodle', async (req, res) => {
+  try {
+    const { imageUrl } = req.body;
+    const imageResponse = await openai.responses.create({
+      model: "gpt-4o-mini",
+      input: [
+          {
+              role: "user",
+              content: [
+                  { type: "input_text", text: "Does this image contain noodles? Respond with 'Yes' or 'No'" },
+                  {
+                      type: "input_image",
+                      image_url: imageUrl
+                  },
+              ],
+          },
+      ],
+    });
+    
+    const result = imageResponse.output_text === 'Yes';
+    
+    res.json(result );
+  } catch (error) {
+    res.status(500).json({ error: "Image analysis failed"})
+  }
+})
+
+app.post('/tweet/:tweetId/tweet-bankrbot', async (req, res) => {
+  // TODO: Please continue here to tag. Just need updated API key that allows writing
+  try {
+    const tweetText = "Hello Twitter! 👋 @LemonCat63";
+    const response = await twitterClient.v2.tweet(tweetText);
+    res.json(response);
+  } catch (error) {
+    console.error("Error posting tweet:", error);
+    res.status(500).json({ error: "Tweet Failed"})
+  }
+})
 
 // Update tip status for a tweet
 app.post('/tweet/:tweetId/tip', async (req, res) => {

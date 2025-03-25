@@ -4,6 +4,61 @@ function TweetList({ tweets }) {
   if (!tweets.length) {
     return null;
   }
+  
+  const handleTip = async (tweet) => {
+    const apiUrl = import.meta.env.VITE_API_URL
+    let imageResult = false;
+    let textResult = false;
+
+    try {
+      const textRequestOptions = {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          tweetText: tweet.text
+        })
+      };
+      const textResponse = await fetch(`${apiUrl}/tweet/is-game-mechanic`, textRequestOptions);
+      // Second API call - Image Analysis (if image exists)
+      if (tweet.image_url) {
+        const imageRequestOptions = {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            imageUrl: tweet.image_url
+          })
+        };
+        
+        const imageResponse = await fetch(`${apiUrl}/tweet/is-noodle`, imageRequestOptions);
+        
+        const isGameMechanic = await textResponse.json()
+        const isNoodle = await imageResponse.json()
+
+      if (isGameMechanic && isNoodle) {
+      // Proceed with tipping
+        console.log("trying to tweet")
+        try {
+        const bankrBotRequestOptions = {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        };
+          const tweetBankrbot = await fetch(`${apiUrl}/tweet/sample-id/tweet-bankrbot`, bankrBotRequestOptions)
+          console.log("success", tweetBankrbot)
+        } catch (error) {
+          console.error('Error posting tweet:', error);
+       }
+        }
+      }
+    } catch (error) {
+      console.error('Error processing tip:', error);
+    }
+  };
 
   return (
     <div className="space-y-6 mt-8">
@@ -67,6 +122,19 @@ function TweetList({ tweets }) {
                     </span>
                   </div>
                 )}
+              </div>
+              <div className="mt-4 flex justify-end">
+                <button
+                  onClick={() => handleTip(tweet)}
+                  disabled={tweet.tip_status === 'completed'}
+                  className={`px-4 py-2 rounded-lg font-medium transition-colors duration-200 ${
+                    tweet.tip_status === 'completed'
+                      ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                      : 'bg-blue-600 text-white hover:bg-blue-700'
+                  }`}
+                >
+                  {tweet.tip_status === 'completed' ? 'Tipped' : tweet.tip_status === 'pending' ? 'Processing' : 'Review'}
+                </button>
               </div>
             </div>
           </div>
