@@ -31,11 +31,11 @@ if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, 'dist')));
 }
 
-const twitterClient = new TwitterApi({
-  appKey: process.env.TWITTER_API_KEY,
-  appSecret: process.env.TWITTER_API_SECRET,
-  accessToken: process.env.TWITTER_ACCESS_TOKEN,
-  accessSecret: process.env.TWITTER_ACCESS_SECRET,
+const twitterSenderClient = new TwitterApi({
+  appKey: process.env.SENDER_TWITTER_API_KEY,
+  appSecret: process.env.SENDER_TWITTER_API_SECRET,
+  accessToken: process.env.SENDER_TWITTER_ACCESS_TOKEN,
+  accessSecret: process.env.SENDER_TWITTER_ACCESS_SECRET,
 });
 
 
@@ -257,46 +257,60 @@ app.post('/tweet/:tweetId/analyze', async (req, res) => {
 
     const result = analysisResponse.output_text
     
-    res.json(result)
+    // returned value contains ```json and ```, so we need to remove them
+    const resultWithoutJson = result.replace("```json", "").replace("```", "");
+
+    // Parse the JSON result
+    const analysisData = JSON.parse(resultWithoutJson);
+
+    // Update the database with analysis results
+    await pool.query(
+      `UPDATE tweets 
+       SET is_game_mechanic = $1,
+           concept_details = $2,
+           image_description = $3,
+           is_noodle = $4,
+           is_tagged = $5,
+           analysis_timestamp = CURRENT_TIMESTAMP,
+           updated_at = CURRENT_TIMESTAMP
+       WHERE tweet_id = $6`,
+      [
+        analysisData.isGameMechanic === "true",
+        analysisData.conceptDetails,
+        analysisData.imageDescription,
+        analysisData.isNoodle === "true",
+        analysisData.tagged === "true",
+        tweetId
+      ]
+    );
+
+    try {
+        // First send "analyzing..." as a reply
+        await twitterSenderClient.v2.tweet({
+            text: "analyzing...",
+            reply: {
+            in_reply_to_tweet_id: tweetId
+            }
+        });
+        
+        // Send tweet if all conditions are met
+        if (analysisData.isGameMechanic === "true" && 
+            analysisData.isNoodle === "true" && 
+            analysisData.tagged === "true") {
+
+            // Then send the "analyzed" tweet
+            await twitterSenderClient.v2.tweet("analyzed");
+        }
+    } catch (tweetError) {
+    console.error('Error sending tweet:', tweetError);
+    }
+    
+    
+    res.json(analysisData);
 
   } catch (error) {
     console.error('Error in analysis:', error);
     res.status(500).json({ error: "Analysis failed" });
-  }
-});
-
-app.post('/tweet/:tweetId/tweet-bankrbot', async (req, res) => {
-  // TODO: Please continue here to tag. Just need updated API key that allows writing
-  try {
-    const tweetText = "Hello Twitter! 👋 @LemonCat63";
-    const response = await twitterClient.v2.tweet(tweetText);
-    res.json(response);
-  } catch (error) {
-    console.error("Error posting tweet:", error);
-    res.status(500).json({ error: "Tweet Failed"})
-  }
-})
-
-// Update tip status for a tweet
-app.post('/tweet/:tweetId/tip', async (req, res) => {
-  const { tweetId } = req.params;
-  const { amount, status } = req.body;
-
-  try {
-    await pool.query(
-      `UPDATE tweets 
-       SET tip_status = $1, 
-           tip_amount = $2, 
-           tip_timestamp = CURRENT_TIMESTAMP,
-           updated_at = CURRENT_TIMESTAMP
-       WHERE tweet_id = $3`,
-      [status, amount, tweetId]
-    );
-
-    res.json({ success: true });
-  } catch (error) {
-    console.error('Error updating tip status:', error);
-    res.status(500).json({ error: 'Failed to update tip status' });
   }
 });
 

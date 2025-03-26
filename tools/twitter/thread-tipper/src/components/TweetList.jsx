@@ -25,25 +25,9 @@ function TweetList({ tweets }) {
       }
 
       const result = await analyzeResponse.json();
-      
-      // Show alert with the analysis results
-      alert(result);
 
-      if (result.isGameMechanic && result.isNoodle) {
-        // Proceed with tipping
-        console.log("trying to tweet");
-        try {
-          const bankrBotResponse = await fetch(`${apiUrl}/tweet/${tweet.id}/tweet-bankrbot`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            }
-          });
-          console.log("success", bankrBotResponse);
-        } catch (error) {
-          console.error('Error posting tweet:', error);
-        }
-      }
+      console.log(result);
+      
     } catch (error) {
       console.error('Error processing tip:', error);
       alert('Error analyzing tweet. Please try again.');

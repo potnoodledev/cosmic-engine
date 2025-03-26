@@ -40,6 +40,12 @@ const initDb = async () => {
         tip_status TEXT DEFAULT 'pending',
         tip_amount DECIMAL(10,2),
         tip_timestamp TIMESTAMP WITH TIME ZONE,
+        is_game_mechanic BOOLEAN,
+        concept_details TEXT,
+        image_description TEXT,
+        is_noodle BOOLEAN,
+        is_tagged BOOLEAN,
+        analysis_timestamp TIMESTAMP WITH TIME ZONE,
         updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );
     `);
