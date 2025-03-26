@@ -71,15 +71,16 @@ app.get('/api/thread/:threadId?', async (req, res) => {
         for (const tweet of newTweets) {
           await client.query(
             `INSERT INTO tweets (
-              tweet_id, thread_id, text, author_id, created_at, image_url
-            ) VALUES ($1, $2, $3, $4, $5, $6)`,
+              tweet_id, thread_id, text, author_id, author_username, created_at, image_url
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
             [
               tweet.id,
               threadId,
               tweet.text,
               tweet.author_id,
+              tweet.author_username,
               tweet.created_at,
-              tweet.image_url || null // Assuming first media is the image
+              tweet.image_url || null
             ]
           );
         }
@@ -124,6 +125,7 @@ app.get('/api/thread/:threadId?', async (req, res) => {
         id: row.tweet_id,
         text: row.text,
         author_id: row.author_id,
+        author_username: row.author_username,
         created_at: row.created_at,
         image_url: row.image_url,
         tip_status: row.tip_status,
@@ -164,13 +166,14 @@ app.get('/api/thread/:threadId?', async (req, res) => {
       for (const tweet of tweets) {
         await client.query(
           `INSERT INTO tweets (
-            tweet_id, thread_id, text, author_id, created_at, image_url
-          ) VALUES ($1, $2, $3, $4, $5, $6)`,
+            tweet_id, thread_id, text, author_id, author_username, created_at, image_url
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
           [
             tweet.id,
             threadId,
             tweet.text,
             tweet.author_id,
+            tweet.author_username,
             tweet.created_at,
             tweet.attachments?.media_keys?.[0] || null
           ]
@@ -207,7 +210,7 @@ app.post('/tweet/:tweetId/analyze', async (req, res) => {
     
     // Get tweet data from database
     const dbResult = await pool.query(
-      'SELECT text, image_url FROM tweets WHERE tweet_id = $1',
+      'SELECT text, image_url, author_username FROM tweets WHERE tweet_id = $1',
       [tweetId]
     );
 
@@ -215,7 +218,7 @@ app.post('/tweet/:tweetId/analyze', async (req, res) => {
       return res.status(404).json({ error: "Tweet not found in database" });
     }
 
-    const { text, image_url } = dbResult.rows[0];
+    const { text, image_url, author_username } = dbResult.rows[0];
     
     // remove any urls from the text
     const textWithoutUrls = text.replace(/https?:\/\/[^\s]+/g, '');
@@ -298,8 +301,17 @@ app.post('/tweet/:tweetId/analyze', async (req, res) => {
             analysisData.isNoodle === "true" && 
             analysisData.tagged === "true") {
 
-            // Then send the "analyzed" tweet
-            await twitterSenderClient.v2.tweet("analyzed");
+            // tweet consts
+            const TIP_AMOUNT = 2;
+            
+
+            // tweet bankrbot to send $NOODS to the author of the tweet
+            await twitterSenderClient.v2.tweet({
+                text: `Hi @bankrbot, can you please send ${TIP_AMOUNT} $NOODS to @${author_username}`,
+                reply: {
+                    in_reply_to_tweet_id: tweetId
+                }
+            });
         }
     } catch (tweetError) {
     console.error('Error sending tweet:', tweetError);

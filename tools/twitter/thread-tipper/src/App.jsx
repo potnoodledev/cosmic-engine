@@ -5,25 +5,35 @@ function App() {
   const [tweets, setTweets] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [lastUpdatedAt, setLastUpdatedAt] = useState(null);
+  const [lastRefreshed, setLastRefreshed] = useState(null);
+
+  const fetchTweets = async (refresh = false) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const url = new URL(`${import.meta.env.VITE_API_URL}/api/thread`);
+      if (refresh) {
+        url.searchParams.append('refresh', 'true');
+      }
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error('Failed to fetch tweets');
+      }
+      const data = await response.json();
+      console.log('API Response:', data);
+      setTweets(data.tweets);
+      console.log('Setting lastUpdatedAt to:', data.lastRefreshed?.timestamp);
+      setLastUpdatedAt(data.lastRefreshed?.timestamp);
+      setLastRefreshed(data.lastRefreshed);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchTweets = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/thread?refresh=true`);
-        if (!response.ok) {
-          throw new Error('Failed to fetch tweets');
-        }
-        const data = await response.json();
-        setTweets(data.tweets);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchTweets();
   }, []);
 
@@ -37,7 +47,12 @@ function App() {
                 <h1 className="text-3xl font-bold text-center mb-8">Twitter Thread Viewer</h1>
                 {loading && <div className="text-center">Loading...</div>}
                 {error && <div className="text-red-500 text-center">{error}</div>}
-                <TweetList tweets={tweets} />
+                <TweetList 
+                  tweets={tweets} 
+                  onRefresh={() => fetchTweets(true)}
+                  lastUpdatedAt={lastUpdatedAt}
+                  lastRefreshed={lastRefreshed}
+                />
               </div>
             </div>
           </div>

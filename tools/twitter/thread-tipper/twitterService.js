@@ -80,8 +80,9 @@ export const getThreadTweets = async (threadId) => {
     // First get the conversation ID from the tweet ID
     const initialTweet = await client.v2.singleTweet(threadId, {
       'tweet.fields': ['conversation_id', 'author_id', 'created_at', 'attachments'],
-      expansions: ['attachments.media_keys'],
+      expansions: ['attachments.media_keys', 'author_id'],
       'media.fields': ['url', 'preview_image_url', 'type', 'media_key'],
+      'user.fields': ['username'],
     });
 
     if (!initialTweet.data) {
@@ -96,8 +97,9 @@ export const getThreadTweets = async (threadId) => {
 
     const tweets = await client.v2.search(searchQuery, {
       'tweet.fields': ['created_at', 'author_id', 'conversation_id', 'in_reply_to_user_id', 'attachments'],
-      expansions: ['attachments.media_keys'],
+      expansions: ['attachments.media_keys', 'author_id'],
       'media.fields': ['url', 'preview_image_url', 'type', 'media_key'],
+      'user.fields': ['username'],
       max_results: 100,
     });
 
@@ -142,10 +144,15 @@ export const getThreadTweets = async (threadId) => {
         imageUrl = extractImageUrlFromText(tweet.text);
       }
 
+      // Get username from includes
+      const author = includes?.users?.find(user => user.id === tweet.author_id);
+      const username = author?.username;
+
       console.log(`Tweet ${tweet.id} image URL:`, imageUrl);
       return {
         ...tweet,
-        image_url: imageUrl
+        image_url: imageUrl,
+        author_username: username
       };
     });
 

@@ -35,6 +35,7 @@ const initDb = async () => {
         thread_id TEXT REFERENCES twitter_threads(thread_id),
         text TEXT NOT NULL,
         author_id TEXT NOT NULL,
+        author_username TEXT,
         created_at TIMESTAMP WITH TIME ZONE NOT NULL,
         image_url TEXT,
         tip_status TEXT DEFAULT 'pending',
