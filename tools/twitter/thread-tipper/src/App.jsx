@@ -33,6 +33,14 @@ function App() {
     }
   };
 
+  const updateTweetData = (tweetId, newData) => {
+    setTweets(prevTweets => 
+      prevTweets.map(tweet => 
+        tweet.id === tweetId ? { ...tweet, ...newData, analysis_timestamp: new Date().toISOString() } : tweet
+      )
+    );
+  };
+
   useEffect(() => {
     fetchTweets();
   }, []);
@@ -52,6 +60,7 @@ function App() {
                   onRefresh={() => fetchTweets(true)}
                   lastUpdatedAt={lastUpdatedAt}
                   lastRefreshed={lastRefreshed}
+                  onUpdateTweet={updateTweetData}
                 />
               </div>
             </div>

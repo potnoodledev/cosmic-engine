@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-function TweetList({ tweets, onRefresh, lastUpdatedAt, lastRefreshed }) {
+function TweetList({ tweets, onRefresh, lastUpdatedAt, lastRefreshed, onUpdateTweet }) {
   const [loadingTweetId, setLoadingTweetId] = useState(null);
 
   if (!tweets.length) {
@@ -27,6 +27,26 @@ function TweetList({ tweets, onRefresh, lastUpdatedAt, lastRefreshed }) {
       const result = await analyzeResponse.json();
 
       console.log(result);
+      
+      // Prepare data for parent update
+      const updatePayload = {
+        is_game_mechanic: result.isGameMechanic === 'true',
+        concept_details: result.conceptDetails,
+        image_description: result.imageDescription,
+        is_noodle: result.isNoodle === 'true',
+        is_tagged: result.tagged === 'true',
+        // analysis_timestamp will be set in the parent update function
+      };
+
+      // Include tip info if it was returned from the API
+      if (result.tip_status) {
+        updatePayload.tip_status = result.tip_status;
+        updatePayload.tip_amount = result.tip_amount;
+        updatePayload.tip_timestamp = result.tip_timestamp;
+      }
+
+      // Update the tweet state in the parent component
+      onUpdateTweet(tweet.id, updatePayload);
       
     } catch (error) {
       console.error('Error processing tip:', error);
@@ -117,21 +137,64 @@ function TweetList({ tweets, onRefresh, lastUpdatedAt, lastRefreshed }) {
                   </div>
                 )}
               </div>
+              {/* Analysis Section */}
+              {tweet.analysis_timestamp && (
+                <div className="mt-4 pt-4 border-t border-gray-200 text-sm text-gray-600 space-y-2">
+                  <h4 className="font-medium text-gray-700">Analysis Results:</h4>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-gray-500">Analyzed at:</span>
+                    <span className="font-medium">
+                      {new Date(tweet.analysis_timestamp).toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-gray-500">Game Mechanic:</span>
+                    <span className={`font-medium ${tweet.is_game_mechanic ? 'text-green-600' : 'text-red-600'}`}>
+                      {tweet.is_game_mechanic ? 'Yes' : 'No'}
+                    </span>
+                    {tweet.concept_details && <span className="text-gray-500 italic">({tweet.concept_details})</span>}
+                  </div>
+                   <div className="flex items-center space-x-2">
+                    <span className="text-gray-500">Image Description:</span>
+                    <span className="font-medium text-gray-600">
+                        {tweet.image_description || 'N/A'}
+                    </span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-gray-500">Contains Noodles:</span>
+                    <span className={`font-medium ${tweet.is_noodle ? 'text-green-600' : 'text-red-600'}`}>
+                      {tweet.is_noodle ? 'Yes' : 'No'}
+                    </span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-gray-500">Tagged ($NOODS):</span>
+                    <span className={`font-medium ${tweet.is_tagged ? 'text-green-600' : 'text-red-600'}`}>
+                      {tweet.is_tagged ? 'Yes' : 'No'}
+                    </span>
+                  </div>
+                </div>
+              )}
+              {/* End Analysis Section */}
               <div className="mt-4 flex justify-end">
-                <button
-                  onClick={() => handleTip(tweet)}
-                  disabled={tweet.tip_status === 'completed' || !tweet.image_url || loadingTweetId === tweet.id}
-                  className={`px-4 py-2 rounded-lg font-medium transition-colors duration-200 ${
-                    tweet.tip_status === 'completed' || !tweet.image_url || loadingTweetId === tweet.id
-                      ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                      : 'bg-blue-600 text-white hover:bg-blue-700'
-                  }`}
-                >
-                  {loadingTweetId === tweet.id ? 'Analyzing...' :
-                   tweet.tip_status === 'completed' ? 'Tipped' :
-                   tweet.tip_status === 'pending' ? 'Processing' :
-                   !tweet.image_url ? 'No Image' : 'Analyze'}
-                </button>
+                {!tweet.analysis_timestamp && ( // Only show button if not analyzed
+                  <button
+                    onClick={() => handleTip(tweet)}
+                    disabled={!tweet.image_url || loadingTweetId === tweet.id} // Removed tip_status check as analysis is separate
+                    className={`px-4 py-2 rounded-lg font-medium transition-colors duration-200 ${
+                      !tweet.image_url || loadingTweetId === tweet.id
+                        ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                        : 'bg-blue-600 text-white hover:bg-blue-700'
+                    }`}
+                  >
+                    {loadingTweetId === tweet.id ? 'Analyzing...' :
+                     !tweet.image_url ? 'No Image' : 'Analyze'}
+                  </button>
+                )}
+                {tweet.analysis_timestamp && ( // Show status if already analyzed
+                   <span className="px-4 py-2 rounded-lg font-medium text-gray-500 bg-gray-100">
+                     Analyzed
+                   </span>
+                )}
               </div>
             </div>
           </div>

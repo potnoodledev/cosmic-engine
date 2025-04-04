@@ -130,7 +130,13 @@ app.get('/api/thread/:threadId?', async (req, res) => {
         image_url: row.image_url,
         tip_status: row.tip_status,
         tip_amount: row.tip_amount,
-        tip_timestamp: row.tip_timestamp
+        tip_timestamp: row.tip_timestamp,
+        is_game_mechanic: row.is_game_mechanic,
+        concept_details: row.concept_details,
+        image_description: row.image_description,
+        is_noodle: row.is_noodle,
+        is_tagged: row.is_tagged,
+        analysis_timestamp: row.analysis_timestamp
       }));
 
       return res.json({
@@ -223,11 +229,6 @@ app.post('/tweet/:tweetId/analyze', async (req, res) => {
     // remove any urls from the text
     const textWithoutUrls = text.replace(/https?:\/\/[^\s]+/g, '');
     
-    // Check if text is a game mechanic
-    const mechanicResponse = await openai.responses.create({
-      model: "gpt-4o-mini",
-      input: `As a game design expert, analyze if the following text could be a game mechanic. Respond with 'Yes' or 'No':\n\n${textWithoutUrls}`
-    });
 
     // Check if image contains noodles
     const analysisResponse = await openai.responses.create({
@@ -259,7 +260,7 @@ app.post('/tweet/:tweetId/analyze', async (req, res) => {
     });
 
     const result = analysisResponse.output_text
-    
+
     // returned value contains ```json and ```, so we need to remove them
     const resultWithoutJson = result.replace("```json", "").replace("```", "");
 
@@ -289,12 +290,12 @@ app.post('/tweet/:tweetId/analyze', async (req, res) => {
 
     try {
         // First send "analyzing..." as a reply
-        await twitterSenderClient.v2.tweet({
-            text: "analyzing...",
-            reply: {
-            in_reply_to_tweet_id: tweetId
-            }
-        });
+        // await twitterSenderClient.v2.tweet({
+        //     text: "analyzing...",
+        //     reply: {
+        //     in_reply_to_tweet_id: tweetId
+        //     }
+        // });
         
         // Send tweet if all conditions are met
         if (analysisData.isGameMechanic === "true" && 
@@ -312,13 +313,56 @@ app.post('/tweet/:tweetId/analyze', async (req, res) => {
                     in_reply_to_tweet_id: tweetId
                 }
             });
+            // update the db to show that the tweet has been tipped
+            await pool.query(
+              `UPDATE tweets 
+               SET tip_status = 'completed',
+                   tip_amount = $1,
+                   tip_timestamp = CURRENT_TIMESTAMP
+               WHERE tweet_id = $2`,
+              [TIP_AMOUNT, tweetId]
+          );
+
+          // Include updated tip info in the response
+          analysisData.tip_status = 'completed';
+          analysisData.tip_amount = TIP_AMOUNT;
+          analysisData.tip_timestamp = new Date().toISOString();
+
+        } else {
+            // create text for the tweet explaining that error
+            var tweetText = "🍜..."
+
+            if (analysisData.isGameMechanic === "false") {
+                tweetText += "Game mechanic unclear.."
+            }
+
+            if (analysisData.isNoodle === "false") {
+                tweetText += "image oes not contain noodles.."
+            }
+
+            if (analysisData.tagged === "false") {
+                tweetText += "cannot find $NOODS in text.."
+            }
+
+            tweetText += "please try again... 🍜"
+
+            // send a tweet explaining that the tweet does not contain a game mechanic or noodles            
+            await twitterSenderClient.v2.tweet({
+                text: tweetText,
+                reply: {
+                    in_reply_to_tweet_id: tweetId
+                }
+            });
         }
+
     } catch (tweetError) {
     console.error('Error sending tweet:', tweetError);
+    // Optionally, still return analysis data even if tweeting fails
+    // Or you could return an error specific to tweeting
     }
     
     
-    res.json(analysisData);
+    res.json(analysisData); // This now includes tip info if applicable
 
   } catch (error) {
     console.error('Error in analysis:', error);
