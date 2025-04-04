@@ -64,15 +64,13 @@ app.get('/api/thread/:threadId?', async (req, res) => {
           [threadId]
         );
 
-        // Delete existing tweets for this thread
-        await client.query('DELETE FROM tweets WHERE thread_id = $1', [threadId]);
-
-        // Insert new tweets
+        // Insert new tweets, ignoring conflicts to preserve existing data
         for (const tweet of newTweets) {
           await client.query(
             `INSERT INTO tweets (
               tweet_id, thread_id, text, author_id, author_username, created_at, image_url
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+             ON CONFLICT (tweet_id) DO NOTHING`,
             [
               tweet.id,
               threadId,
@@ -93,8 +91,36 @@ app.get('/api/thread/:threadId?', async (req, res) => {
         client.release();
       }
 
+      // After refresh, fetch the complete updated list from DB
+      const finalDbResult = await pool.query(
+        `SELECT t.*, th.updated_at as thread_updated_at 
+         FROM tweets t 
+         JOIN twitter_threads th ON t.thread_id = th.thread_id 
+         WHERE t.thread_id = $1 
+         ORDER BY t.created_at ASC`,
+        [threadId]
+      );
+
+      const finalTweets = finalDbResult.rows.map(row => ({
+        id: row.tweet_id,
+        text: row.text,
+        author_id: row.author_id,
+        author_username: row.author_username,
+        created_at: row.created_at,
+        image_url: row.image_url,
+        tip_status: row.tip_status,
+        tip_amount: row.tip_amount,
+        tip_timestamp: row.tip_timestamp,
+        is_game_mechanic: row.is_game_mechanic,
+        concept_details: row.concept_details,
+        image_description: row.image_description,
+        is_noodle: row.is_noodle,
+        is_tagged: row.is_tagged,
+        analysis_timestamp: row.analysis_timestamp
+      }));
+
       return res.json({
-        tweets: newTweets,
+        tweets: finalTweets, // Return the full list from DB
         lastRefreshed: {
           timestamp: new Date().toISOString(),
           minutesAgo: 0,
